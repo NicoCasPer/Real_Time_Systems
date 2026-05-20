@@ -6,7 +6,6 @@
  *   muestra el color guardado usando PWM con el periferico LEDC.
  */
 
-#include <math.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -20,7 +19,7 @@
 #include "freertos/semphr.h"
 #include "freertos/task.h"
 
-#include "ADC_calibrate.h"
+#include "ADC_calibrate_full.h"
 #include "UART_usage.h"
 
 /* ----------------------------- Pinout usado ----------------------------- */
@@ -68,10 +67,12 @@
 #define BUTTON_DEBOUNCE_TIME_MS     50
 #define RGB2_TASK_PERIOD_MS         20
 #define TEMP_TASK_PERIOD_MS         1000
+#define NTC_ADC_SAMPLES             64
 
 /* --------------------------- Parametros del NTC -------------------------- */
 
 // Valores tipicos para un termistor NTC 10k/B3950.
+#define NTC_VCC_MV                      3300.0f
 #define NTC_NOMINAL_RESISTANCE_OHMS     10000.0f
 #define NTC_SERIES_RESISTOR_OHMS        10000.0f
 #define NTC_BETA_COEFFICIENT            3950.0f
@@ -81,11 +82,7 @@
  * Conexion asumida para el divisor:
  *
  *   3.3 V --- resistencia fija 10k --- ADC(GPIO34) --- NTC --- GND
- *
- * Si el NTC esta conectado a 3.3 V y la resistencia fija a GND, cambiar a 0.
  */
-#define NTC_CONNECTED_TO_GND        1
-
 typedef struct {
     ledc_channel_t red_channel;
     ledc_channel_t green_channel;
@@ -106,9 +103,6 @@ typedef struct {
 } debounce_button_t;
 
 static const char *TAG = "ADC_NTC_RGB";
-
-/* Referencia para calibración de temperatura (1 punto en arranque) */
-#define ADC_CALIB_T_REF_C                 17.0f
 
 static const rgb_channels_t LED_RGB1 = {
     .red_channel = LED_RGB1_RED_CHANNEL,
@@ -233,47 +227,20 @@ static uint8_t adc_raw_to_pwm_8bit(int raw)
     return (uint8_t)((raw * (int)LEDC_MAX_DUTY + (ADC_MAX_RAW / 2)) / ADC_MAX_RAW);
 }
 
-/* Conversión raw->°C (modelo Beta). En runtime, luego se corrige con ADC_calibrate. */
-static float ntc_raw_to_celsius(int raw)
-{
-    if (raw <= 0) {
-        raw = 1;
-    } else if (raw >= ADC_MAX_RAW) {
-        raw = ADC_MAX_RAW - 1;
-    }
-
-#if NTC_CONNECTED_TO_GND
-    const float ntc_resistance = NTC_SERIES_RESISTOR_OHMS *
-                                  ((float)raw / (float)(ADC_MAX_RAW - raw));
-#else
-    const float ntc_resistance = NTC_SERIES_RESISTOR_OHMS *
-                                  ((float)(ADC_MAX_RAW - raw) / (float)raw);
-#endif
-
-    const float nominal_temperature_k = NTC_NOMINAL_TEMPERATURE_C + 273.15f;
-    const float inv_temperature_k = (1.0f / nominal_temperature_k) +
-                                     (logf(ntc_resistance / NTC_NOMINAL_RESISTANCE_OHMS) /
-                                      NTC_BETA_COEFFICIENT);
-    return (1.0f / inv_temperature_k) - 273.15f;
-}
-
 static esp_err_t read_current_temperature_for_uart(int *out_ntc_raw, float *out_temperature_c)
 {
     if (out_ntc_raw == NULL || out_temperature_c == NULL) {
         return ESP_ERR_INVALID_ARG;
     }
 
-    const int ntc_raw = read_adc_raw_average(NTC_ADC_CHANNEL, ADC_AVERAGE_SAMPLES);
-    const float temperature_model_c = ntc_raw_to_celsius(ntc_raw);
-
-    float temperature_c = temperature_model_c;
-    esp_err_t err = adc_calibrate_apply_temperature(temperature_model_c, &temperature_c);
+    adc_calibrate_full_reading_t reading = {0};
+    esp_err_t err = adc_calibrate_full_read_temperature(&reading);
     if (err != ESP_OK) {
         return err;
     }
 
-    *out_ntc_raw = ntc_raw;
-    *out_temperature_c = temperature_c;
+    *out_ntc_raw = reading.raw;
+    *out_temperature_c = reading.temperature_c;
     return ESP_OK;
 }
 
@@ -368,26 +335,29 @@ static void temperature_rgb1_task(void *arg)
     (void)arg;
 
     while (true) {
-        const int ntc_raw = read_adc_raw_average(NTC_ADC_CHANNEL, ADC_AVERAGE_SAMPLES);
-        const float temperature_model_c = ntc_raw_to_celsius(ntc_raw);
-
-        float temperature_c = temperature_model_c;
-        ESP_ERROR_CHECK(adc_calibrate_apply_temperature(temperature_model_c, &temperature_c));
+        adc_calibrate_full_reading_t reading = {0};
+        ESP_ERROR_CHECK(adc_calibrate_full_read_temperature(&reading));
 
         uint8_t red = 0;
         uint8_t green = 0;
         uint8_t blue = 0;
 
-        uart_usage_temperature_to_rgb(temperature_c,
+        uart_usage_temperature_to_rgb(reading.temperature_c,
                                       (uint8_t)LEDC_MAX_DUTY,
                                       &red,
                                       &green,
                                       &blue);
         set_rgb_pwm(&LED_RGB1, red, green, blue);
-        uart_usage_update_temperature_snapshot(ntc_raw, temperature_c);
+        uart_usage_update_temperature_snapshot(reading.raw, reading.temperature_c);
 
-        ESP_LOGI(TAG, "NTC raw=%d | T_model=%.2fC | T_corr=%.2fC | RGB1 R=%u G=%u B=%u",
-                 ntc_raw, temperature_model_c, temperature_c, red, green, blue);
+        ESP_LOGI(TAG, "NTC raw=%d | V=%dmV | R=%.1fohm | T=%.2fC | RGB1 R=%u G=%u B=%u",
+                 reading.raw,
+                 reading.voltage_mv,
+                 reading.ntc_resistance_ohms,
+                 reading.temperature_c,
+                 red,
+                 green,
+                 blue);
 
         vTaskDelay(pdMS_TO_TICKS(TEMP_TASK_PERIOD_MS));
     }
@@ -495,8 +465,21 @@ void app_main(void)
     set_rgb_pwm(&LED_RGB1, 0, 0, 0);
     set_rgb_pwm(&LED_RGB2, 0, 0, 0);
 
-    // Calibración en tiempo de arranque (1 punto): corrige temperatura usando NTC
-    ESP_ERROR_CHECK(adc_calibrate_init(s_adc1_handle, NTC_ADC_CHANNEL, s_adc_mutex, ADC_CALIB_T_REF_C, ADC_AVERAGE_SAMPLES));
+    const adc_calibrate_full_config_t ntc_config = {
+        .adc_handle = s_adc1_handle,
+        .adc_unit = ADC_UNIT_1,
+        .ntc_channel = NTC_ADC_CHANNEL,
+        .atten = ADC_ATTENUATION,
+        .bitwidth = ADC_BITWIDTH_USED,
+        .adc_mutex = s_adc_mutex,
+        .samples = NTC_ADC_SAMPLES,
+        .vcc_mv = NTC_VCC_MV,
+        .series_resistor_ohms = NTC_SERIES_RESISTOR_OHMS,
+        .ntc_nominal_ohms = NTC_NOMINAL_RESISTANCE_OHMS,
+        .ntc_beta = NTC_BETA_COEFFICIENT,
+        .nominal_temperature_c = NTC_NOMINAL_TEMPERATURE_C,
+    };
+    ESP_ERROR_CHECK(adc_calibrate_full_init(&ntc_config));
 
     const uart_usage_callbacks_t uart_callbacks = {
         .read_temperature = read_current_temperature_for_uart,
