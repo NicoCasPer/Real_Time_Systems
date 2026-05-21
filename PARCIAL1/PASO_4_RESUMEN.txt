@@ -1,0 +1,45 @@
+# PASO 4 - IMPLEMENTACIÓN COMPLETA
+
+## Cambios Realizados
+
+✅ **app_config.h**
+- Macro `INTEGRATED_LED_GPIO = GPIO_NUM_2`
+- Períodos y configuración de tarea
+
+✅ **app_adc.h/c**
+- Función `app_adc_raw_to_temperature_threshold()` - mapeo lineal [0-4095] → [0-100]°C
+- Función `app_led_integrated_init()` - inicialización GPIO
+- Función `app_led_integrated_set()` - control del LED
+
+✅ **UART_usage.h/c**
+- Campos `temperature_threshold` e `integrated_led_state` en snapshot
+- Funciones seguras con mutex para lectura/escritura
+- Comando UART `THRESHOLD`
+
+✅ **app_tasks.c**
+- Inicialización de LED en startup
+- Nueva tarea `integrated_led_control_task()` - ciclo de control On-Off
+- Lectura potenciómetro → mapeo → lectura temperatura → comparación → conmutación GPIO
+
+## Control On-Off
+
+```
+Lee POT → Mapea a umbral [0-100]°C → Lee Temperatura → Compara → Conmuta LED
+```
+
+Si `T_actual > T_umbral` → LED ON, si no → LED OFF
+
+## Comando UART
+
+```
+THRESHOLD
+→ umbral=XX°C | LED=ON/OFF | T_actual=YY.YY°C
+```
+
+## Sincronización Thread-Safe
+
+Todas las actualizaciones del umbral y estado del LED están protegidas con mutex `s_state_mutex`.
+
+---
+
+Listo para compilar y desplegar.
