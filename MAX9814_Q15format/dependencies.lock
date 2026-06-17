@@ -1,0 +1,24 @@
+dependencies:
+  i2s_examples_common:
+    dependencies: []
+    source:
+      path: /Users/nicocasper/.espressif/v5.5.2/esp-idf/examples/peripherals/i2s/i2s_examples_common
+      type: local
+    version: '*'
+  idf:
+    source:
+      type: idf
+    version: 5.5.2
+  lvgl/lvgl:
+    component_hash: 184e532558c1c45fefed631f3e235423d22582aafb4630f3e8885c35281a49ae
+    dependencies: []
+    source:
+      registry_url: https://components.espressif.com/
+      type: service
+    version: 9.5.0
+direct_dependencies:
+- i2s_examples_common
+- lvgl/lvgl
+manifest_hash: 313ce392fcaef993f207cbfdf62f3f562df84e58b3da91fea5757284d212fa82
+target: esp32
+version: 2.0.0

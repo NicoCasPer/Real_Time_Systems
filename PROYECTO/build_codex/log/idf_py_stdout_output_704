@@ -1,0 +1,47 @@
+Command: ninja all
+[1/9] Performing build step for 'bootloader'
+[1/1] C:\WINDOWS\system32\cmd.exe /C "cd /D C:\Users\jhoja\OneDrive\Documentos\Codigo\http_sever_and_flash_program\build_codex\bootloader\esp-idf\esptool_py && C:\Users\jhoja\.espressif\python_env\idf5.5_py3.11_env\Scripts\python.exe C:/Users/jhoja/esp/v5.5.1/esp-idf/components/partition_table/check_sizes.py --offset 0x8000 bootloader 0x1000 C:/Users/jhoja/OneDrive/Documentos/Codigo/http_sever_and_flash_program/build_codex/bootloader/bootloader.bin"
+Bootloader binary size 0x6680 bytes. 0x980 bytes (8%) free.
+[2/9] No install step for 'bootloader'
+[3/9] Completed 'bootloader'
+[4/9] Building C object esp-idf/main/CMakeFiles/__idf_main.dir/http_server.c.obj
+C:/Users/jhoja/OneDrive/Documentos/Codigo/http_sever_and_flash_program/main/http_server.c: In function 'http_server_read_register_handler':
+C:/Users/jhoja/OneDrive/Documentos/Codigo/http_sever_and_flash_program/main/http_server.c:382:14: warning: unused variable 'read_regs' [-Wunused-variable]
+  382 |         char read_regs[255];
+      |              ^~~~~~~~~
+C:/Users/jhoja/OneDrive/Documentos/Codigo/http_sever_and_flash_program/main/http_server.c: In function 'http_server_register_change_handler':
+C:/Users/jhoja/OneDrive/Documentos/Codigo/http_sever_and_flash_program/main/http_server.c:869:15: warning: unused variable 'days' [-Wunused-variable]
+  869 |         char* days = NULL;
+      |               ^~~~
+C:/Users/jhoja/OneDrive/Documentos/Codigo/http_sever_and_flash_program/main/http_server.c: In function 'http_server_register_erase_handler':
+C:/Users/jhoja/OneDrive/Documentos/Codigo/http_sever_and_flash_program/main/http_server.c:1033:15: warning: unused variable 'days' [-Wunused-variable]
+ 1033 |         char* days = NULL;
+      |               ^~~~
+C:/Users/jhoja/OneDrive/Documentos/Codigo/http_sever_and_flash_program/main/http_server.c:1032:11: warning: unused variable 'min_str' [-Wunused-variable]
+ 1032 |     char* min_str = NULL;
+      |           ^~~~~~~
+C:/Users/jhoja/OneDrive/Documentos/Codigo/http_sever_and_flash_program/main/http_server.c:1030:11: warning: unused variable 'hour_str' [-Wunused-variable]
+ 1030 |     char* hour_str = NULL;
+      |           ^~~~~~~~
+In file included from C:/Users/jhoja/OneDrive/Documentos/Codigo/http_sever_and_flash_program/main/http_server.c:18:
+C:/Users/jhoja/OneDrive/Documentos/Codigo/http_sever_and_flash_program/main/wifi_app.h: At top level:
+C:/Users/jhoja/OneDrive/Documentos/Codigo/http_sever_and_flash_program/main/wifi_app.h:79:13: warning: 'obtain_time' declared 'static' but never defined [-Wunused-function]
+   79 | static void obtain_time( void );
+      |             ^~~~~~~~~~~
+C:/Users/jhoja/OneDrive/Documentos/Codigo/http_sever_and_flash_program/main/wifi_app.h:91:13: warning: 'wifi_app_connect_sta' declared 'static' but never defined [-Wunused-function]
+   91 | static void wifi_app_connect_sta(void);
+      |             ^~~~~~~~~~~~~~~~~~~~
+C:/Users/jhoja/OneDrive/Documentos/Codigo/http_sever_and_flash_program/main/http_server.c:545:13: warning: 'mqtt_app_start' defined but not used [-Wunused-function]
+  545 | static void mqtt_app_start(void)
+      |             ^~~~~~~~~~~~~~
+[5/9] Linking C static library esp-idf\main\libmain.a
+[6/9] Generating esp-idf/esp_system/ld/sections.ld
+[7/9] Linking CXX executable http_sever_and_flash_program.elf
+[8/9] Generating binary image from built executable
+esptool.py v4.10.0
+Creating esp32 image...
+Merged 2 ELF sections
+Successfully created esp32 image.
+Generated C:/Users/jhoja/OneDrive/Documentos/Codigo/http_sever_and_flash_program/build_codex/http_sever_and_flash_program.bin
+[9/9] C:\WINDOWS\system32\cmd.exe /C "cd /D C:\Users\jhoja\OneDrive\Documentos\Codigo\http_sever_and_flash_program\build_codex\esp-idf\esptool_py && C:\Users\jhoja\.espressif\python_env\idf5.5_py3.11_env\Scripts\python.exe C:/Users/jhoja/esp/v5.5.1/esp-idf/components/partition_table/check_sizes.py --offset 0x8000 partition --type app C:/Users/jhoja/OneDrive/Documentos/Codigo/http_sever_and_flash_program/build_codex/partition_table/partition-table.bin C:/Users/jhoja/OneDrive/Documentos/Codigo/http_sever_and_flash_program/build_codex/http_sever_and_flash_program.bin"
+http_sever_and_flash_program.bin binary size 0x128490 bytes. Smallest app partition is 0x1f0000 bytes. 0xc7b70 bytes (40%) free.

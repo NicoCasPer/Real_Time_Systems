@@ -1,0 +1,6 @@
+# Tabla de particiones para flash de 2MB, una sola app (sin OTA).
+# Da ~1.94MB a la app para que quepa el binario con webpage + wifi + http.
+# Name,   Type, SubType, Offset,   Size
+nvs,      data, nvs,     0x9000,   0x6000
+phy_init, data, phy,     0xf000,   0x1000
+factory,  app,  factory, 0x10000,  0x1F0000

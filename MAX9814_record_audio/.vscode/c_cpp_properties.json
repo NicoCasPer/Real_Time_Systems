@@ -1,0 +1,26 @@
+{
+  "configurations": [
+    {
+      "name": "ESP-IDF",
+      "compilerPath": "/Users/nicocasper/.espressif/tools/xtensa-esp-elf/esp-14.2.0_20251107/xtensa-esp-elf/bin/xtensa-esp32-elf-gcc",
+      "compileCommands": "${workspaceFolder}/build/compile_commands.json",
+      "intelliSenseMode": "macos-clang-x64",
+      "includePath": [
+        "${workspaceFolder}/**",
+        "${workspaceFolder}/main",
+        "${workspaceFolder}/build/config",
+        "${env:IDF_PATH}/components/**",
+        "${env:IDF_PATH}/components/freertos/include",
+        "${env:IDF_PATH}/components/driver/include",
+        "${workspaceFolder}/build/esp-idf/**"
+      ],
+      "browse": {
+        "path": [
+          "${workspaceFolder}"
+        ],
+        "limitSymbolsToIncludedHeaders": true
+      }
+    }
+  ],
+  "version": 4
+}

@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <script src="jquery-3.3.1.min.js"></script>
+    <link rel="stylesheet" href="app.css">
+    <script defer src="app.js"></script>
+    <title>STR 2026 Environmental Control</title>
+</head>
+<body>
+    <header class="topbar">
+        <div>
+            <p class="eyebrow">STR 2026</p>
+            <h1>Environmental Control</h1>
+            <p style="margin-top:6px;"><a href="/" target="_blank" style="color:#fff; text-decoration:underline;">Abrir Dashboard</a></p>
+        </div>
+        <div class="status-strip">
+            <div><span>Temp</span><strong id="temperature_reading">--</strong></div>
+            <div><span>Fan</span><strong id="fan_speed">--</strong></div>
+            <div><span>Cortina</span><strong id="curtain_state">--</strong></div>
+            <div><span>Alarma</span><strong id="alarm_state">--</strong></div>
+        </div>
+    </header>
+
+    <main class="layout">
+        <section class="panel">
+            <div class="panel__header">
+                <p class="eyebrow">Cortina</p>
+                <h2>Servo motor</h2>
+            </div>
+            <div class="stack">
+                <div class="segmented">
+                    <button id="curtain_manual_mode" type="button">Manual</button>
+                    <button id="curtain_schedule_mode" type="button">Agenda</button>
+                </div>
+                <label class="field">
+                    <span>Apertura manual</span>
+                    <input id="curtain_opening" type="range" min="0" max="100" value="0">
+                    <output id="curtain_opening_label">0%</output>
+                </label>
+                <button class="btn primary" id="save_curtain" type="button">Aplicar cortina</button>
+            </div>
+        </section>
+
+        <section class="panel wide">
+            <div class="panel__header">
+                <p class="eyebrow">Agenda</p>
+                <h2>8 registros programables</h2>
+            </div>
+            <div class="schedule" id="schedule_rows"></div>
+        </section>
+
+        <section class="panel">
+            <div class="panel__header">
+                <p class="eyebrow">Ventilacion</p>
+                <h2>PWM fan</h2>
+            </div>
+            <div class="stack">
+                <div class="segmented">
+                    <button id="fan_auto_mode" type="button">Auto</button>
+                    <button id="fan_manual_mode" type="button">Manual</button>
+                </div>
+                <div class="double">
+                    <label class="field">
+                        <span>Temp deseada</span>
+                        <input id="desired_temp" type="number" min="0" max="80" step="0.5" value="24">
+                    </label>
+                    <label class="field">
+                        <span>Temp maxima</span>
+                        <input id="max_temp" type="number" min="1" max="100" step="0.5" value="32">
+                    </label>
+                </div>
+                <label class="field">
+                    <span>Velocidad manual</span>
+                    <input id="fan_manual_speed" type="range" min="0" max="100" value="0">
+                    <output id="fan_manual_speed_label">0%</output>
+                </label>
+                <button class="btn primary" id="save_fan" type="button">Aplicar ventilacion</button>
+            </div>
+        </section>
+
+        <section class="panel">
+            <div class="panel__header">
+                <p class="eyebrow">Luz ambiente</p>
+                <h2>LED RGB</h2>
+            </div>
+            <div class="stack">
+                <label class="field">
+                    <span>Color</span>
+                    <input id="rgb_color" type="color" value="#ffb450">
+                </label>
+                <label class="field">
+                    <span>Brillo</span>
+                    <input id="rgb_brightness" type="range" min="0" max="100" value="60">
+                    <output id="rgb_brightness_label">60%</output>
+                </label>
+                <button class="btn primary" id="save_rgb" type="button">Aplicar luz</button>
+            </div>
+        </section>
+
+        <section class="panel">
+            <div class="panel__header">
+                <p class="eyebrow">Wi-Fi STA</p>
+                <h2>Red local</h2>
+            </div>
+            <div class="stack">
+                <label class="field">
+                    <span>SSID</span>
+                    <input id="connect_ssid" type="text" maxlength="32" placeholder="Red WiFi">
+                </label>
+                <label class="field">
+                    <span>Password</span>
+                    <input id="connect_pass" type="password" maxlength="64" placeholder="Clave">
+                </label>
+                <label class="check"><input id="show_sta_password" type="checkbox"><span>Mostrar clave</span></label>
+                <button class="btn primary" id="connect_wifi" type="button">Conectar</button>
+                <div class="message" id="wifi_connect_status"></div>
+            </div>
+        </section>
+
+        <section class="panel">
+            <div class="panel__header">
+                <p class="eyebrow">Soft AP</p>
+                <h2>Red del ESP32</h2>
+            </div>
+            <div class="stack">
+                <label class="field">
+                    <span>SSID AP</span>
+                    <input id="ap_ssid" type="text" maxlength="32" placeholder="ESP32_STR_2026">
+                </label>
+                <label class="field">
+                    <span>Password AP</span>
+                    <input id="ap_pass" type="password" maxlength="64" placeholder="Minimo 8 caracteres">
+                </label>
+                <button class="btn primary" id="save_ap" type="button">Actualizar AP</button>
+                <div class="message" id="ap_status"></div>
+            </div>
+        </section>
+
+        <section class="panel wide">
+            <div class="panel__header">
+                <p class="eyebrow">OTA</p>
+                <h2>Firmware update</h2>
+            </div>
+            <div class="ota-row">
+                <input type="file" id="selected_file" accept=".bin" onchange="getFileInfo()" hidden>
+                <button class="btn ghost" type="button" onclick="document.getElementById('selected_file').click();">Seleccionar .bin</button>
+                <button class="btn primary" type="button" onclick="updateFirmware()">Actualizar firmware</button>
+                <span id="latest_firmware">--</span>
+            </div>
+            <div class="message" id="file_info"></div>
+            <div class="message strong" id="ota_update_status"></div>
+        </section>
+    </main>
+</body>
+</html>

@@ -1,0 +1,1 @@
+Command: cmake -G Ninja -DPYTHON_DEPS_CHECKED=1 -DPYTHON=/Users/nicocasper/.espressif/tools/python/v5.5.2/venv/bin/python3 -DESP_PLATFORM=1 -DIDF_TARGET=esp32 -DCCACHE_ENABLE=0 /Users/nicocasper/Real_Time_Systems/PROYECTO

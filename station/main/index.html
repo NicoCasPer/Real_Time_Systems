@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Control ESP32 WROOM 2</title>
+    <style>
+        :root {
+            --bg-color: #121214;
+            --card-bg: #1a1a1e;
+            --text-color: #e1e1e6;
+            --primary: #04d361;
+            --danger: #f75656;
+            --red-led: #ff4747;
+            --green-led: #22c55e;
+            --blue-led: #3b82f6;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .container {
+            max-width: 500px;
+            width: 100%;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 1.8rem;
+            color: var(--primary);
+        }
+
+        header p {
+            margin: 5px 0 0;
+            color: #8d8d99;
+            font-size: 0.9rem;
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            border: 1px solid #29292e;
+        }
+
+        .card h2 {
+            margin-top: 0;
+            font-size: 1.2rem;
+            border-bottom: 1px solid #29292e;
+            padding-bottom: 10px;
+            color: #fff;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        label {
+            font-size: 0.9rem;
+            margin-bottom: 6px;
+            color: #c4c4cc;
+        }
+
+        input[type="text"], input[type="password"] {
+            background-color: #121214;
+            border: 1px solid #29292e;
+            padding: 10px;
+            border-radius: 5px;
+            color: #fff;
+            font-size: 1rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        input[type="text"]:focus, input[type="password"]:focus {
+            border-color: var(--primary);
+        }
+
+        button {
+            background-color: var(--primary);
+            color: #0a0a0c;
+            border: none;
+            padding: 12px;
+            border-radius: 5px;
+            font-weight: bold;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        button:hover {
+            background-color: #00b347;
+        }
+
+        /* Estilos para la sección RGB */
+        .rgb-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .rgb-control {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-grow: 1;
+        }
+
+        .rgb-row input[type="range"] {
+            flex-grow: 1;
+            accent-color: var(--accent-color, #fff);
+        }
+
+        .val-display {
+            width: 35px;
+            text-align: right;
+            font-family: monospace;
+            font-size: 1rem;
+        }
+
+        .btn-send-rgb {
+            padding: 8px 12px;
+            font-size: 0.85rem;
+            background-color: #29292e;
+            color: #fff;
+        }
+        
+        .btn-send-rgb:hover {
+            background-color: #323238;
+        }
+
+        /* Estilos Telemetría */
+        .telemetry-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 10px 0;
+        }
+
+        .temp-box {
+            text-align: center;
+        }
+
+        .temp-value {
+            font-size: 3rem;
+            font-weight: bold;
+            color: #ff9000;
+            font-family: monospace;
+        }
+
+        .console-log {
+            background-color: #121214;
+            border-radius: 4px;
+            padding: 10px;
+            font-family: monospace;
+            font-size: 0.85rem;
+            color: #7c7c8a;
+            max-height: 80px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>ESP32 WROOM 2</h1>
+        <p>Panel de Configuración Local</p>
+    </header>
+
+    <div class="card">
+        <h2>Configuración Wi-Fi (STA)</h2>
+        <div class="form-group">
+            <label for="ssid">Nombre de Red (SSID)</label>
+            <input type="text" id="ssid" placeholder="Ej: Bindy.">
+        </div>
+        <div class="form-group">
+            <label for="password">Contraseña</label>
+            <input type="password" id="password" placeholder="••••••••">
+        </div>
+        <button id="btn-wifi" onclick="enviarWifi()">Conectar ESP32</button>
+    </div>
+
+    <div class="card">
+        <h2>Control de Intensidad RGB (Demo Visual)</h2>
+        
+        <div class="rgb-row" style="--accent-color: var(--red-led);">
+            <div class="rgb-control">
+                <label style="color: var(--red-led); width: 50px; font-weight: bold;">Rojo:</label>
+                <input type="range" id="range-r" min="0" max="255" value="127" oninput="updateVal('r')">
+                <span id="val-r" class="val-display">127</span>
+            </div>
+            <button class="btn-send-rgb" onclick="enviarRGB('Rojo', 'range-r')">Enviar</button>
+        </div>
+
+        <div class="rgb-row" style="--accent-color: var(--green-led);">
+            <div class="rgb-control">
+                <label style="color: var(--green-led); width: 50px; font-weight: bold;">Verde:</label>
+                <input type="range" id="range-g" min="0" max="255" value="127" oninput="updateVal('g')">
+                <span id="val-g" class="val-display">127</span>
+            </div>
+            <button class="btn-send-rgb" onclick="enviarRGB('Verde', 'range-g')">Enviar</button>
+        </div>
+
+        <div class="rgb-row" style="--accent-color: var(--blue-led);">
+            <div class="rgb-control">
+                <label style="color: var(--blue-led); width: 50px; font-weight: bold;">Azul:</label>
+                <input type="range" id="range-b" min="0" max="255" value="127" oninput="updateVal('b')">
+                <span id="val-b" class="val-display">127</span>
+            </div>
+            <button class="btn-send-rgb" onclick="enviarRGB('Azul', 'range-b')">Enviar</button>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>Sensor de Temperatura (Lectura en tiempo real)</h2>
+        <div class="telemetry-container">
+            <div class="temp-box">
+                <div class="temp-value" id="temp-display">24.5 °C</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card" style="padding: 10px;">
+        <div class="console-log" id="console">Sistema listo. Esperando interacciones...</div>
+    </div>
+</div>
+
+<script>
+    // Actualizar los números al mover los sliders del RGB
+    function updateVal(color) {
+        const slider = document.getElementById(`range-${color}`);
+        const display = document.getElementById(`val-${color}`);
+        display.innerText = slider.value;
+    }
+
+    // Logger para simular en pantalla lo que haría el JS
+    function log(mensaje) {
+        const consoleLog = document.getElementById('console');
+        consoleLog.innerHTML = `> ${mensaje}<br>` + consoleLog.innerHTML;
+    }
+
+    // Acción del botón Wi-Fi
+    function enviarWifi() {
+        const ssid = document.getElementById('ssid').value;
+        const pass = document.getElementById('password').value;
+
+        if(!ssid) {
+            log('<span style="color:var(--danger)">Error: El campo SSID no puede estar vacío.</span>');
+            return;
+        }
+
+        log(`Enviando credenciales... SSID: <b>${ssid}</b> | Pass: <b>${pass ? '******' : 'Ninguna'}</b>`);
+        
+        /* Nota para el futuro: Aquí usarás fetch() para enviar esto al ESP32. Ejemplo:
+           fetch(`/set_wifi?ssid=${encodeURIComponent(ssid)}&pass=${encodeURIComponent(pass)}`)
+        */
+    }
+
+    // Acción de los botones RGB independientes
+    function enviarRGB(colorName, sliderId) {
+        const valor = document.getElementById(sliderId).value;
+        log(`Canal <b>${colorName}</b> enviado al ESP32. Intensidad PWM: <b>${valor}</b>`);
+        
+        /* Nota para el futuro: Aquí mapearás el envío individual. Ejemplo:
+           fetch(`/set_led?color=${colorName.toLowerCase()}&val=${valor}`)
+        */
+    }
+
+    // Simulación de actualización de temperatura cada 3 segundos
+    setInterval(() => {
+        // Genera una temperatura aleatoria realista entre 23.5 y 26.5 °C
+        const baseTemp = 25.0;
+        const variacion = (Math.random() * 3) - 1.5; 
+        const tempSimulada = (baseTemp + variacion).toFixed(1);
+        
+        document.getElementById('temp-display').innerText = `${tempSimulada} °C`;
+    }, 3000);
+</script>
+
+</body>
+</html>
