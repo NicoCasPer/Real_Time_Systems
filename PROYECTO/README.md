@@ -146,11 +146,17 @@ Termistor **NTC de 10 kΩ / B3950** en un **divisor de tensión** con una resist
 
 | Parámetro | Valor |
 |-----------|-------|
-| `NTC_NOMINAL_RESISTANCE_OHMS` (R₀ a 25 °C) | 10 000 Ω |
-| `NTC_SERIES_RESISTOR_OHMS` (R serie) | 15 000 Ω |
+| `NTC_SERIES_RESISTOR_OHMS` (R serie física) | 15 000 Ω |
+| `NTC_NOMINAL_RESISTANCE_OHMS` (R medida en el punto de calibración) | 30 749 Ω |
+| `NTC_NOMINAL_TEMPERATURE_C` (T del punto de calibración) | 19 °C |
 | `NTC_BETA_COEFFICIENT` (β) | 3950 |
-| `NTC_NOMINAL_TEMPERATURE_C` (T₀) | 25 °C |
 | `NTC_ADC_SAMPLES` (muestras por lectura) | 64 |
+
+> El NTC es físicamente un 10 kΩ, pero su respuesta medida no coincidía con la curva teórica
+> 10 kΩ/B3950 (probablemente por la alta impedancia y el ruido). Por eso se usa una
+> **calibración de 1 punto**: se ancla la curva Beta a una resistencia medida (30 749 Ω) a una
+> temperatura ambiente conocida (19 °C). Para afinar el rango completo se puede tomar un
+> segundo punto (p. ej. agua con hielo) y recalcular β.
 
 > **Nota de estabilidad:** el NTC es de alta impedancia; para lecturas estables se recomienda
 > un **condensador de 100 nF entre GPIO34 y GND** y cables cortos lejos de los motores.
@@ -332,9 +338,15 @@ R: A través de la **estructura de estado compartida** protegida por mutex y de 
 (`queue`) para los eventos del WiFi y del servidor HTTP.
 
 **P: ¿Por qué la resistencia serie es de 15 kΩ y el NTC de 10 kΩ?**
-R: El NTC físico es un 10 kΩ/B3950. La resistencia serie de 15 kΩ fija el punto de trabajo del
-divisor. Ambos valores deben coincidir en el firmware (`NTC_NOMINAL_RESISTANCE_OHMS = 10000`,
-`NTC_SERIES_RESISTOR_OHMS = 15000`) o la conversión a temperatura sale desplazada.
+R: El NTC físico es un 10 kΩ/B3950 y la resistencia serie de 15 kΩ fija el punto de trabajo del
+divisor (`NTC_SERIES_RESISTOR_OHMS = 15000`). La resistencia serie del firmware debe coincidir
+con la física o la temperatura sale desplazada.
+
+**P: ¿Cómo calibraste el sensor?**
+R: Con **calibración de 1 punto**: a temperatura ambiente conocida (19 °C) leí la resistencia
+del NTC (30 749 Ω) y anclé la curva Beta a ese par (R, T). Así la lectura es correcta en el
+punto de trabajo. La medida no coincidía con la curva teórica 10 kΩ/B3950 por la alta
+impedancia del NTC y el ruido, por eso se calibra empíricamente en lugar de usar el R₀ nominal.
 
 ---
 

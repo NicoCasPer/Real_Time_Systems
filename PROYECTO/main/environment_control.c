@@ -35,11 +35,13 @@ static const char TAG[] = "env_control";
 #define NTC_ADC_SAMPLES 64
 #define NTC_ADC_MAX_RAW 4095
 #define NTC_VCC_MV 3300.0f
-// Hardware real: NTC de 10k (R0 a 25 C) con resistencia serie fija de 15k.
+// Hardware real: NTC de 10k con resistencia serie fija de 15k.
 #define NTC_SERIES_RESISTOR_OHMS 15000.0f
-#define NTC_NOMINAL_RESISTANCE_OHMS 10000.0f
+// Calibracion de 1 punto: el NTC midio 34303 ohm a 21 C de ambiente.
+// Anclamos la curva Beta a ese punto medido (mas fiable que el R0 teorico).
+#define NTC_NOMINAL_RESISTANCE_OHMS 34303.0f
 #define NTC_BETA_COEFFICIENT 3950.0f
-#define NTC_NOMINAL_TEMPERATURE_C 25.0f
+#define NTC_NOMINAL_TEMPERATURE_C 21.0f
 
 static env_control_state_t s_state = {
     .temperature_c = 0.0f,
@@ -359,9 +361,20 @@ static void update_auto_fan_locked(void)
 static void env_temperature_task(void *pvParameters)
 {
     bool alarm_output = false;
+    float filtered_temp = NAN;
+    const float ema_alpha = 0.15f;  // Suavizado: menor = mas estable, mas lento.
 
     while (true) {
-        float temperature = read_temperature_ntc_c();
+        float raw_temp = read_temperature_ntc_c();
+
+        // Filtro de media movil exponencial (EMA) para reducir el baile de
+        // la lectura del NTC por ruido. La primera muestra inicializa el filtro.
+        if (isnan(filtered_temp)) {
+            filtered_temp = raw_temp;
+        } else {
+            filtered_temp = ema_alpha * raw_temp + (1.0f - ema_alpha) * filtered_temp;
+        }
+        float temperature = filtered_temp;
 
         lock_state();
         s_state.temperature_c = temperature;
